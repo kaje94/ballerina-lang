@@ -33,4 +33,7 @@ public interface BallerinaSymbolService {
 
     @JsonRequest
     CompletableFuture<ExpressionTypeResponse> type(ExpressionTypeRequest params);
+
+    @JsonRequest
+    CompletableFuture<ExpressionTypeResponse> getSymbolDefinition(ExpressionTypeRequest params);
 }

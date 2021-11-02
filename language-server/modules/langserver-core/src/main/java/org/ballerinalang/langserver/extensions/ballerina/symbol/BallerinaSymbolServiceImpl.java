@@ -107,6 +107,48 @@ public class BallerinaSymbolServiceImpl implements BallerinaSymbolService {
         });
     }
 
+    // TODO: change the param and response types of the following function!
+    @Override
+    public CompletableFuture<ExpressionTypeResponse> getSymbolDefinition(ExpressionTypeRequest request) {
+        return CompletableFuture.supplyAsync(() -> {
+            ExpressionTypeResponse expressionTypeResponse = new ExpressionTypeResponse();
+            String fileUri = request.getDocumentIdentifier().getUri();
+            Optional<Path> filePath = CommonUtil.getPathFromURI(fileUri);
+            if (filePath.isEmpty()) {
+                return expressionTypeResponse;
+            }
+
+            try {
+                expressionTypeResponse.setDocumentIdentifier(new TextDocumentIdentifier(fileUri));
+
+                // Get the semantic model.
+                Optional<SemanticModel> semanticModel = this.workspaceManager.semanticModel(filePath.get());
+
+                if (semanticModel.isEmpty()) {
+                    return expressionTypeResponse;
+                }
+
+                Optional<Symbol> symbol = semanticModel.get().symbol(workspaceManager.document(filePath.get()).get(),
+                        LinePosition.from(request.getPosition().line(), request.getPosition().offset()));
+
+                if (symbol.isPresent()) {
+                    // if symbol is present, get the symbol declaration
+                    Optional<Symbol> symbolRef = semanticModel.get().symbol(workspaceManager.document(filePath.get()).get(),
+                            LinePosition.from(symbol.get().getLocation().get().lineRange().startLine().line(), symbol.get().getLocation().get().textRange().startOffset()));
+                    // Use the position of symbolRef to traverse the ST and get the STNode
+                }
+
+                return expressionTypeResponse;
+
+            } catch (Throwable e) {
+                String msg = "Operation 'ballerinaSymbol/getSymbolDefinition' failed!";
+                this.clientLogger.logError(SymbolContext.SC_TYPE_API, msg, e,
+                        request.getDocumentIdentifier(), (Position) null);
+                return expressionTypeResponse;
+            }
+        });
+    }
+
     private List<String> getAllUnionTypes(Symbol symbol) {
         List<String> allTypes = new ArrayList<>();
         if (symbol.kind() == SymbolKind.VARIABLE) {
